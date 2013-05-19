@@ -19,16 +19,12 @@ OAuthPolicy.consumer_credential = credential
 
 OAuthPolicy.token = OAuthCredential.new CONFIG['access_token_key'], nil
 
-ignore = CONFIG['ignore']
+puts "Finding board..."
+board = Board.find("51963af6417516c57e0059ab")
 
-me = Member.find("me")
-boardarray = Array.new
-me.boards.each do |board|
-  if ignore.include? board.id
-	  puts "Skipping #{board.name}"
-  else
-    filename = board.name.parameterize
-    puts "Preparing to backup #{board.name}"
-    createspreadsheet(board, filename)
-	end
-end
+if board.has_lists?
+	todo_list = board.lists.first
+end 
+puts "Creating card in #{todo_list.id}"
+card = Card.create(:name=>"Prueba",:list_id=>todo_list.id)
+
