@@ -13,5 +13,3 @@ private_key: yourkeyhere
 # If you want your token to expire after 30 days, drop the &expiration=never.
 access_token_key: yourtokenhere
 
-#Set a collection of any board IDs you want to ignore
-ignore: [boardid1, boardid2]
