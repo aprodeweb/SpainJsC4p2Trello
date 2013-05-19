@@ -4,7 +4,7 @@ $LOAD_PATH.unshift 'lib'
 require 'trello'
 require 'rubygems'
 require 'simple_xlsx'
-require_relative 'filewriter'
+#require_relative 'filewriter'
 require 'yaml'
 
 include Trello
