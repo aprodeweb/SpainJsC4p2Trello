@@ -9,7 +9,6 @@ require 'yaml'
 include Trello
 include Trello::Authorization
 
-CSV_FILE_PATH = File.join(File.dirname(__FILE__), "2013.SpainJS.C4P.2013.05.17.csv")
 Trello::Authorization.const_set :AuthPolicy, OAuthPolicy
 
 CONFIG = YAML::load(File.open("config.yml")) unless defined? CONFIG
@@ -20,37 +19,72 @@ OAuthPolicy.consumer_credential = credential
 OAuthPolicy.token = OAuthCredential.new CONFIG['access_token_key'], nil
 
 puts "Finding board..."
-board = Board.find("51983302706741e77e0080b8")
+boards = {}
+boards[:talks]      = Board.find("5199e8c3c0df829a78011b49")
+boards[:workshops]  = Board.find("5199ee54e06fe5897800a5a7")
 
-if board.has_lists?
-	todo_list = board.lists.first
-	puts "Retrieving #{todo_list.name}"
-	 
-end 
+lists = {}
 
+boards.each do |k,board|
+  if board.has_lists?
+    lists[k] = board.lists.first
+    puts "Retrieving #{lists[k].name}"
+  end
+end
 
 lines = 0
 
-puts "Reading file #{CSV_FILE_PATH}"
-#Timestamp,Name,Description,Title,Email,Your Bio,Your Twitter Account,Type,Level
-CSV.foreach(CSV_FILE_PATH) do |line|
-  if lines > 1
-    name = line[1] 
-    description = line[2]
-    title = line[3]
-    email = line[4]
-    bio = line[5]
-    twitter = line[6]
-    type = line[7]
-    level = line[8]
-
-    puts "Creating card #{name} - #{email}"
-  
-    card = Card.create(:name=>"#{type} - #{level} - #{title}",:description=>"# #{name} - #{email} - @#{twitter} 
-  	#{description}",:list_id=>todo_list.id)
+def line_to_row(line)
+  hash = {}
+  [:time, :name, :description, :title, :email, :bio, :twitter, :type, :level].each_with_index do |k,i|
+    hash[k] = line[i]
   end
-  lines = lines+1
+  hash
 end
 
-puts "Finished process. #{lines} cards inserted"
+def description_from_row(row)
+  text = <<-EOF
+Details
+-------
+
+- **Name:** #{row[:name]}
+- **Email:** #{row[:email]}
+- **Twitter:** #{row[:twitter]}
+- **Level:** #{row[:level]}
+
+Description
+-----------
+
+#{row[:description]}
+
+Bio
+---
+
+#{row[:bio]}
+EOF
+  text
+end
+
+puts "Reading from STDIN"
+#Timestamp,Name,Description,Title,Email,Your Bio,Your Twitter Account,Type,Level
+CSV($stdin) do |csv|
+  csv.each do |line|
+    if lines > 1
+      row = line_to_row(line)
+
+      list = lists[row[:type] == "Talk" ? :talks : :workshops]
+
+      print "Creating card #{row[:name]} - #{row[:email]}: "
+      card = Card.create(
+        :name        => "#{row[:title]}, by #{row[:name]} (#{row[:level]})",
+        :description => description_from_row(row),
+        :list_id     => list.id
+      )
+      puts card.id.to_s
+    end
+    lines += 1
+  end
+end
+
+puts "Finished process. #{lines-1} cards inserted"
 

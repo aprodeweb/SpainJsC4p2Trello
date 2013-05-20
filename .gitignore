@@ -19,3 +19,5 @@ doc/
 archive/
 .DS_Store
 config.yml
+
+*.csv

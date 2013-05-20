@@ -1,4 +1,4 @@
 source :rubygems
 
 gem 'ruby-trello'
-gem 'csv'
+# gem 'csv' # CSV is a standard lib!
